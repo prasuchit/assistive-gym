@@ -114,7 +114,9 @@ def render_policy(env, env_name, algo, policy_path, coop=False, colab=False, see
                 action_human = test_agent.compute_action(obs['human'], policy_id='human')
                 # Step the simulation forward using the actions from our trained policies
                 obs, reward, done, info = env.step({'robot': action_robot, 'human': action_human})
+                # print(reward, done)
                 done = done['__all__']
+                
             else:
                 # Compute the next action using the trained policy
                 action = test_agent.compute_action(obs)
@@ -185,20 +187,21 @@ def evaluate_policy(env_name, algo, policy_path, n_episodes=100, coop=False, see
 
 
 if __name__ == '__main__':
+    import random
     parser = argparse.ArgumentParser(description='RL for Assistive Gym')
-    parser.add_argument('--env', default='ScratchItchJaco-v0',
-                        help='Environment to train on (default: ScratchItchJaco-v0)')
+    parser.add_argument('--env', default='FeedingSawyerHuman-v1',
+                        help='Environment to train on (default: FeedingSawyerHuman-v1)')
     parser.add_argument('--algo', default='ppo',
                         help='Reinforcement learning algorithm')
-    parser.add_argument('--seed', type=int, default=1,
+    parser.add_argument('--seed', type=int, default=random.randint(1,100),
                         help='Random seed (default: 1)')
-    parser.add_argument('--train', action='store_true', default=False,
+    parser.add_argument('--train', action='store_true', default=True,
                         help='Whether to train a new policy')
     parser.add_argument('--render', action='store_true', default=False,
                         help='Whether to render a single rollout of a trained policy')
     parser.add_argument('--evaluate', action='store_true', default=False,
                         help='Whether to evaluate a trained policy over n_episodes')
-    parser.add_argument('--train-timesteps', type=int, default=1000000,
+    parser.add_argument('--train-timesteps', type=int, default=10 ** 9,
                         help='Number of simulation timesteps to train a policy (default: 1000000)')
     parser.add_argument('--save-dir', default='./trained_models/',
                         help='Directory to save trained policy in (default ./trained_models/)')
