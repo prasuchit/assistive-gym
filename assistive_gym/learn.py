@@ -213,7 +213,7 @@ if __name__ == '__main__':
                         help='Number of evaluation episodes (default: 100)')
     parser.add_argument('--colab', action='store_true', default=False,
                         help='Whether rendering should generate an animated png rather than open a window (e.g. when using Google Colab)')
-    parser.add_argument('--verbose', action='store_true', default=False,
+    parser.add_argument('--verbose', action='store_true', default=True,
                         help='Whether to output more verbose prints')
     args = parser.parse_args()
 
