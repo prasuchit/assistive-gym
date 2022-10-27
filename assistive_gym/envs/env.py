@@ -12,7 +12,8 @@ from .util import Util
 from .world_creation import WorldCreation
 
 class AssistiveEnv(gym.Env):
-    def __init__(self, robot_type='pr2', task='scratch_itch', human_control=False, frame_skip=5, time_step=0.02, action_robot_len=7, action_human_len=0, obs_robot_len=30, obs_human_len=0):
+    def __init__(self, robot_type='pr2', task='scratch_itch', human_control=False, frame_skip=5, time_step=0.02, 
+                action_robot_len=7, action_human_len=0, obs_robot_len=30, obs_human_len=0, noisy = True, random_noise = False):
         # Start the bullet physics server
         self.id = p.connect(p.DIRECT)
         # print('Physics server ID:', self.id)
@@ -28,6 +29,8 @@ class AssistiveEnv(gym.Env):
         self.action_space = spaces.Box(low=np.array([-1.0]*(self.action_robot_len+self.action_human_len)), high=np.array([1.0]*(self.action_robot_len+self.action_human_len)), dtype=np.float32)
         self.observation_space = spaces.Box(low=np.array([-1.0]*(self.obs_robot_len+self.obs_human_len)), high=np.array([1.0]*(self.obs_robot_len+self.obs_human_len)), dtype=np.float32)
 
+        self.noisy = noisy
+        self.random_noise = random_noise
         self.configp = configparser.ConfigParser()
         self.configp.read(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'config.ini'))
         # Human preference weights

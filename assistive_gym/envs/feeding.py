@@ -90,13 +90,23 @@ class FeedingEnv(AssistiveEnv):
 
         head_pos, head_orient = p.getLinkState(self.human, 23, computeForwardKinematics=True, physicsClientId=self.id)[:2]
 
+        if self.noisy:
+            if not self.random_noise:
+                noisy_head_pos, noisy_head_orient = np.array(list(head_pos)) + 0.1, np.array(list(head_orient)) + 0.1
+                noisy_head_pos, noisy_head_orient = tuple(list(noisy_head_pos)), tuple(list(noisy_head_orient))
+                noisy_forces = list(np.array(forces) + 0.1)
+                noisy_target_pos = self.target_pos + 0.1
+                noisy_torso_pos = torso_pos + 0.1
+        noisy_robot_obs = np.concatenate([spoon_pos-noisy_torso_pos, spoon_orient, spoon_pos-noisy_target_pos, robot_right_joint_positions, noisy_head_pos-noisy_torso_pos, noisy_head_orient, noisy_forces]).ravel()
         robot_obs = np.concatenate([spoon_pos-torso_pos, spoon_orient, spoon_pos-self.target_pos, robot_right_joint_positions, head_pos-torso_pos, head_orient, forces]).ravel()
         if self.human_control:
             human_obs = np.concatenate([spoon_pos-human_pos, spoon_orient, spoon_pos-self.target_pos, human_joint_positions, head_pos-human_pos, head_orient, forces_human]).ravel()
         else:
             human_obs = []
 
-        return np.concatenate([robot_obs, human_obs]).ravel()
+        if not self.noisy:
+            return np.concatenate([robot_obs, human_obs]).ravel()
+        else: return np.concatenate([noisy_robot_obs, human_obs]).ravel()
 
     def reset(self):
         self.setup_timing()
