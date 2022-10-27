@@ -5,7 +5,8 @@ from ray.rllib.agents import ppo, sac
 from ray.tune.logger import pretty_print
 from numpngw import write_apng
 from tqdm import tqdm
-# import shutup; shutup.please()
+import random
+
 
 
 def setup_config(env, algo, coop=False, seed=0, extra_configs={}):
@@ -70,14 +71,15 @@ def make_env(env_name, coop=False, seed=1001):
     env.seed(seed)
     return env
 
-def record_policy(env, env_name, algo, policy_path, coop=True, seed=0, num_steps=200, extra_configs={}):
+def record_policy(env, env_name, algo, policy_path, coop=True, seed=0, num_steps=100000, extra_configs={}):
     ray.init(num_cpus=multiprocessing.cpu_count(), ignore_reinit_error=True, log_to_driver=False)
+
     if env is None:
         env = make_env(env_name, coop, seed=seed)
         
     test_agent, _ = load_policy(env, algo, env_name, policy_path, coop, seed, extra_configs)
     
-    env.render()
+    # env.render()
     obs = env.reset()
 
     if coop:
@@ -97,6 +99,8 @@ def record_policy(env, env_name, algo, policy_path, coop=True, seed=0, num_steps
     reward = 0
 
     for step in tqdm(range(num_steps)):
+    # for step in range(num_steps):
+    #     print("Step: ", step)
         if coop:
             action_robot = test_agent.compute_action(obs['robot'], policy_id='robot')
             action_human = test_agent.compute_action(obs['human'], policy_id='human')
@@ -120,6 +124,11 @@ def record_policy(env, env_name, algo, policy_path, coop=True, seed=0, num_steps
             reward += (rewards['robot'] + rewards['human']) / 2
 
             if done:
+                seed = random.randint(0,1000)
+                env.seed(seed)
+                    
+                # test_agent, _ = load_policy(env, algo, env_name, policy_path, coop, seed, extra_configs)
+                
                 obs = env.reset()
 
                 length_stats.append(length)
@@ -130,17 +139,17 @@ def record_policy(env, env_name, algo, policy_path, coop=True, seed=0, num_steps
             else:
                 obs = next_obs
 
-    states_rollout['robot'] = th.as_tensor(states_rollout['robot']).float()
-    states_rollout['human'] = th.as_tensor(states_rollout['human']).float()
-    actions_rollout['robot'] = th.as_tensor(actions_rollout['robot']).float()
-    actions_rollout['human'] = th.as_tensor(actions_rollout['human']).float()
-    rewards_rollout['robot'] = th.as_tensor(rewards_rollout['robot']).float()
-    rewards_rollout['human'] = th.as_tensor(rewards_rollout['human']).float()
-    next_states_rollout['robot'] = th.as_tensor(next_states_rollout['robot']).float()
-    next_states_rollout['human'] = th.as_tensor(next_states_rollout['human']).float()
-    dones_rollout['robot'] = th.as_tensor(dones_rollout['robot']).float()
-    dones_rollout['human'] = th.as_tensor(dones_rollout['human']).float()
-    
+    states_rollout['robot'] = th.tensor(states_rollout['robot']).float()
+    states_rollout['human'] = th.tensor(states_rollout['human']).float()
+    actions_rollout['robot'] = th.tensor(actions_rollout['robot']).float()
+    actions_rollout['human'] = th.tensor(actions_rollout['human']).float()
+    rewards_rollout['robot'] = th.tensor(rewards_rollout['robot']).float()
+    rewards_rollout['human'] = th.tensor(rewards_rollout['human']).float()
+    next_states_rollout['robot'] = th.tensor(next_states_rollout['robot']).float()
+    next_states_rollout['human'] = th.tensor(next_states_rollout['human']).float()
+    dones_rollout['robot'] = th.tensor(dones_rollout['robot']).float()
+    dones_rollout['human'] = th.tensor(dones_rollout['human']).float()
+
     trajectories = {
         'state': states_rollout,
         'action': actions_rollout,
@@ -163,10 +172,10 @@ def record_policy(env, env_name, algo, policy_path, coop=True, seed=0, num_steps
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='RL for Assistive Gym')
     parser.add_argument('--env', default='FeedingSawyerHuman-v1',
-                        help='Environment to train on (default: FeedingSawyerHuman-v1)')
+                        help='Environment to train on (default: ScratchItchJaco-v0)')
     parser.add_argument('--algo', default='ppo',
                         help='Reinforcement learning algorithm')
-    parser.add_argument('--seed', type=int, default=1,
+    parser.add_argument('--seed', type=int, default=random.randint(0,100),
                         help='Random seed (default: 1)')
     parser.add_argument('--train', action='store_true', default=False,
                         help='Whether to train a new policy')
@@ -184,7 +193,7 @@ if __name__ == '__main__':
                         help='Number of rendering episodes (default: 1)')
     parser.add_argument('--eval-episodes', type=int, default=100,
                         help='Number of evaluation episodes (default: 100)')
-    parser.add_argument('--verbose', action='store_true', default=False,
+    parser.add_argument('--verbose', action='store_true', default=True,
                         help='Whether to output more verbose prints')
     args = parser.parse_args()
 
