@@ -19,7 +19,7 @@ from .agents.furniture import Furniture
 
 class AssistiveEnv(gym.Env):
     def __init__(self, robot=None, human=None, task='', obs_robot_len=0, obs_human_len=0, time_step=0.02, 
-                frame_skip=5, render=False, gravity=-9.81, seed=1001, noisy = True, random_noise = False):
+                frame_skip=5, render=False, gravity=-9.81, seed=1001, noisy = False, random_noise = False):
         self.task = task
         self.time_step = time_step
         self.frame_skip = frame_skip

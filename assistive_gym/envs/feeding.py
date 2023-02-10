@@ -93,27 +93,23 @@ class FeedingEnv(AssistiveEnv):
             # Don't include joint angles for the wheels
             robot_joint_angles = robot_joint_angles[len(self.robot.wheel_joint_indices):]
         head_pos, head_orient = self.human.get_pos_orient(self.human.head)
+        head_pos_real, head_orient_real = self.robot.convert_to_realworld(head_pos, head_orient)
+        target_pos_real, _ = self.robot.convert_to_realworld(self.target_pos)
+        self.robot_force_on_human, self.spoon_force_on_human = self.get_total_force()
+        self.total_force_on_human = self.robot_force_on_human + self.spoon_force_on_human
+        robot_obs = np.concatenate([spoon_pos_real, spoon_orient_real, spoon_pos_real - target_pos_real, robot_joint_angles, head_pos_real, head_orient_real, [self.spoon_force_on_human]]).ravel()
+        ######### FOR NOISY OBSERVATIONS ####################################################################################################################
         if self.noisy:
             if self.random_noise:
                 noisy_head_pos, noisy_head_orient = head_pos + np.random.normal(0,1,1) , head_orient + np.random.normal(0,1,1)
-            else:
-                noisy_head_pos, noisy_head_orient = head_pos + 0.1 , head_orient + 0.1
-        head_pos_real, head_orient_real = self.robot.convert_to_realworld(head_pos, head_orient)
-        noisy_head_pos_real, noisy_head_orient_real = self.robot.convert_to_realworld(noisy_head_pos, noisy_head_orient)
-        target_pos_real, _ = self.robot.convert_to_realworld(self.target_pos)
-        noisy_target_pos_real, _ = self.robot.convert_to_realworld(self.noisy_target_pos) # Robot only sees noisy pose
-        self.robot_force_on_human, self.spoon_force_on_human = self.get_total_force()
-        self.total_force_on_human = self.robot_force_on_human + self.spoon_force_on_human
-        if self.noisy:
-            if self.random_noise:
                 self.noisy_spoon_force_on_human = self.spoon_force_on_human + np.random.normal(0,1,1)
             else:
+                noisy_head_pos, noisy_head_orient = head_pos + 0.1 , head_orient + 0.1
                 self.noisy_spoon_force_on_human = self.spoon_force_on_human + 0.1
-        robot_obs = np.concatenate([spoon_pos_real, spoon_orient_real, spoon_pos_real - target_pos_real, robot_joint_angles, head_pos_real, head_orient_real, [self.spoon_force_on_human]]).ravel()
-        noisy_robot_obs = np.concatenate([spoon_pos_real, spoon_orient_real, spoon_pos_real - target_pos_real, robot_joint_angles, noisy_head_pos_real, noisy_head_orient_real, [self.noisy_spoon_force_on_human]]).ravel()
+            noisy_head_pos_real, noisy_head_orient_real = self.robot.convert_to_realworld(noisy_head_pos, noisy_head_orient)
+            noisy_target_pos_real, _ = self.robot.convert_to_realworld(self.noisy_target_pos) # Robot only sees noisy pose
+            noisy_robot_obs = np.concatenate([spoon_pos_real, spoon_orient_real, spoon_pos_real - target_pos_real, robot_joint_angles, noisy_head_pos_real, noisy_head_orient_real, [self.noisy_spoon_force_on_human]]).ravel()
         
-        ######### FOR NOISY OBSERVATIONS ####################################################################################################################
-        if self.noisy:
             robot_obs = noisy_robot_obs
         ####################################################################################################################################################
 
@@ -205,25 +201,25 @@ class FeedingEnv(AssistiveEnv):
         # Set target on mouth
         self.mouth_pos = [0, -0.11, 0.03] if self.human.gender == 'male' else [0, -0.1, 0.03]
         head_pos, head_orient = self.human.get_pos_orient(self.human.head)
+        target_pos, target_orient = p.multiplyTransforms(head_pos, head_orient, self.mouth_pos, [0, 0, 0, 1], physicsClientId=self.id)
         if self.noisy:
             if self.random_noise:
                 noisy_head_pos, noisy_head_orient = head_pos + np.random.normal(0,1,1) , head_orient + np.random.normal(0,1,1)
             else:
                 noisy_head_pos, noisy_head_orient = head_pos + 0.1 , head_orient + 0.1
-        target_pos, target_orient = p.multiplyTransforms(head_pos, head_orient, self.mouth_pos, [0, 0, 0, 1], physicsClientId=self.id)
-        noisy_target_pos, noisy_target_orient = p.multiplyTransforms(noisy_head_pos, noisy_head_orient, self.mouth_pos, [0, 0, 0, 1], physicsClientId=self.id)
+            noisy_target_pos, noisy_target_orient = p.multiplyTransforms(noisy_head_pos, noisy_head_orient, self.mouth_pos, [0, 0, 0, 1], physicsClientId=self.id)
         self.target = self.create_sphere(radius=0.01, mass=0.0, pos=target_pos, collision=False, rgba=[0, 1, 0, 1])
         self.update_targets()
 
     def update_targets(self):
         head_pos, head_orient = self.human.get_pos_orient(self.human.head)
+        target_pos, target_orient = p.multiplyTransforms(head_pos, head_orient, self.mouth_pos, [0, 0, 0, 1], physicsClientId=self.id)
+        self.target_pos = np.array(target_pos)
         if self.noisy:
             if self.random_noise:
                 noisy_head_pos, noisy_head_orient = head_pos + np.random.normal(0,1,1) , head_orient + np.random.normal(0,1,1)
             else:
                 noisy_head_pos, noisy_head_orient = head_pos + 0.1 , head_orient + 0.1
-        target_pos, target_orient = p.multiplyTransforms(head_pos, head_orient, self.mouth_pos, [0, 0, 0, 1], physicsClientId=self.id)
-        noisy_target_pos, noisy_target_orient = p.multiplyTransforms(noisy_head_pos, noisy_head_orient, self.mouth_pos, [0, 0, 0, 1], physicsClientId=self.id)
-        self.target_pos = np.array(target_pos)
-        self.noisy_target_pos = np.array(noisy_target_pos)
+            noisy_target_pos, noisy_target_orient = p.multiplyTransforms(noisy_head_pos, noisy_head_orient, self.mouth_pos, [0, 0, 0, 1], physicsClientId=self.id)
+            self.noisy_target_pos = np.array(noisy_target_pos)
         self.target.set_base_pos_orient(self.target_pos, [0, 0, 0, 1])
