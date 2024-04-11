@@ -53,6 +53,11 @@ class FeedingSawyerHumanEnv(FeedingEnv, MultiAgentEnv):
         super(FeedingSawyerHumanEnv, self).__init__(robot=Sawyer(robot_arm), human=Human(human_controllable_joint_indices, controllable=True))
 register_env('assistive_gym:FeedingSawyerHuman-v1', lambda config: FeedingSawyerHumanEnv())
 
+class TBFeedingSawyerHumanEnv(FeedingEnv, MultiAgentEnv):
+    def __init__(self):
+        super(TBFeedingSawyerHumanEnv, self).__init__(robot=Sawyer(robot_arm), human=Human(human_controllable_joint_indices, controllable=True))
+register_env('assistive_gym:TBFeedingSawyerHuman-v1', lambda config: TBFeedingSawyerHumanEnv())
+
 class FeedingJacoHumanEnv(FeedingEnv, MultiAgentEnv):
     def __init__(self):
         super(FeedingJacoHumanEnv, self).__init__(robot=Jaco(robot_arm), human=Human(human_controllable_joint_indices, controllable=True))
