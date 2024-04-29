@@ -1,4 +1,5 @@
 from .feeding import FeedingEnv
+from .TBfeeding import TBFeedingEnv
 from .feeding_mesh import FeedingMeshEnv
 from .agents import pr2, baxter, sawyer, jaco, stretch, panda, human, human_mesh
 from .agents.pr2 import PR2
@@ -53,7 +54,7 @@ class FeedingSawyerHumanEnv(FeedingEnv, MultiAgentEnv):
         super(FeedingSawyerHumanEnv, self).__init__(robot=Sawyer(robot_arm), human=Human(human_controllable_joint_indices, controllable=True))
 register_env('assistive_gym:FeedingSawyerHuman-v1', lambda config: FeedingSawyerHumanEnv())
 
-class TBFeedingSawyerHumanEnv(FeedingEnv, MultiAgentEnv):
+class TBFeedingSawyerHumanEnv(TBFeedingEnv, MultiAgentEnv):
     def __init__(self):
         super(TBFeedingSawyerHumanEnv, self).__init__(robot=Sawyer(robot_arm), human=Human(human_controllable_joint_indices, controllable=True))
 register_env('assistive_gym:TBFeedingSawyerHuman-v1', lambda config: TBFeedingSawyerHumanEnv())

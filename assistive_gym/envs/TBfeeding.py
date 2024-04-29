@@ -10,15 +10,18 @@ from .agents.furniture import Furniture
 class TBFeedingEnv(AssistiveEnv):
     def __init__(self, robot, human):
         '''
-        NOTE: PS: the obs_robot_len has been changed from 18 + len(controllable_joints) to 13 + len(controllable_joints) 
+        NOTE: PS: the obs_robot_len has been changed from 18 + len(controllable_joints) to 12 + len(controllable_joints) 
         because we removed 3 pose, 4 orient values of human head and added 1 self type value and 1 human type instead. 
         For human, the len went from 19 + len(joints) to 21 + len(joints))
         '''
-        super(TBFeedingEnv, self).__init__(robot=robot, human=human, task='feeding', obs_robot_len=(12 + len(robot.controllable_joint_indices) -
-                                                                                                    (len(robot.wheel_joint_indices) if robot.mobile else 0)), obs_human_len=(21 + len(human.controllable_joint_indices)))
-
-        self.prev_agent_type = {ag_id: 0 for ag_id in len(range(2))}
-        self.current_energy_level = {ag_id: 10 for ag_id in len(range(2))}
+        self.n_agents = 2
+        self.agents = ['robot', 'human']
+        self.nAgent_type = 2
+        self.prev_agent_type = {ag_id: 0 for ag_id in self.agents}
+        self.current_energy_level = {ag_id: 10 for ag_id in self.agents}
+        
+        super(TBFeedingEnv, self).__init__(robot=robot, human=human, task='feeding', obs_robot_len=(13 + len(robot.controllable_joint_indices) -
+                                            (len(robot.wheel_joint_indices) if robot.mobile else 0)), obs_human_len=(21 + len(human.controllable_joint_indices)))
 
     def get_other_agents_types(self, curr_ag_id):
         '''
@@ -26,7 +29,7 @@ class TBFeedingEnv(AssistiveEnv):
         '''
         return [
             self.prev_agent_type[ag_id]
-            for ag_id in range(self.n_agents)
+            for ag_id in self.agents
             if ag_id != curr_ag_id
         ]
         
@@ -35,9 +38,9 @@ class TBFeedingEnv(AssistiveEnv):
         @brief Updates energy levels of agents and if an agent's energy is 0 then updates their type to fatigued.
         In this case only the human fatigues.
         '''
-        self.current_energy_level[1] -= 1 if self.current_energy_level[1] > 0 else self.current_energy_level[1]
-        if self.current_energy_level[1] == 0:
-            self.prev_agent_type[1] = 1
+        self.current_energy_level[self.agents[1]] -= 1 if self.current_energy_level[self.agents[1]] > 0 else self.current_energy_level[self.agents[1]]
+        if self.current_energy_level[self.agents[1]] == 0:
+            self.prev_agent_type[self.agents[1]] = 1
 
     def step(self, action):
         if self.human.controllable:
@@ -145,7 +148,7 @@ class TBFeedingEnv(AssistiveEnv):
         self.total_force_on_human = self.robot_force_on_human + self.spoon_force_on_human
         # NOTE: PS: Removed head_pos_real, head_orient_real from robot obs to let human type provide the info that he's fatigued
         robot_obs = np.concatenate([spoon_pos_real, spoon_orient_real, spoon_pos_real - target_pos_real,
-                                    robot_joint_angles, [self.spoon_force_on_human], [self.prev_agent_type[0]]]).ravel()
+                                    robot_joint_angles, [self.spoon_force_on_human], [self.prev_agent_type[self.agents[0]]]]).ravel()
         if agent == 'robot':
             return robot_obs
         if self.human.controllable:
@@ -158,7 +161,7 @@ class TBFeedingEnv(AssistiveEnv):
             target_pos_human, _ = self.human.convert_to_realworld(
                 self.target_pos)
             human_obs = np.concatenate([spoon_pos_human, spoon_orient_human, spoon_pos_human - target_pos_human, human_joint_angles,
-                                        head_pos_human, head_orient_human, [self.robot_force_on_human, self.spoon_force_on_human], [self.prev_agent_type[1]]]).ravel()
+                                        head_pos_human, head_orient_human, [self.robot_force_on_human, self.spoon_force_on_human], [self.prev_agent_type[self.agents[1]]]]).ravel()
             if agent == 'human':
                 return human_obs
             # Co-optimization with both human and robot controllable
@@ -248,7 +251,8 @@ class TBFeedingEnv(AssistiveEnv):
 
         self.init_env_variables()
 
-        self.prev_agent_type = {ag_id: None for ag_id in len(range(2))}
+        self.prev_agent_type = {ag_id: 0 for ag_id in self.agents}
+        self.current_energy_level = {ag_id: 10 for ag_id in self.agents}
         self.time_elapsed = 0
 
         return self._get_obs()
